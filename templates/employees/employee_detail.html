@@ -1,22 +1,36 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ employee.first_name }} {{ employee.last_name }}</title>
+</head>
+<body>
+    <h1>{{ employee.first_name }} {{ employee.last_name }}</h1>
+    <p>Пол: {{ employee.gender }}</p>
+    <p>Стаж работы: {{ days_at_company }} дней</p>
 
-{% block content %}
-<h1>Профиль сотрудника</h1>
+    {% if main_image %}
+        <img src="{{ main_image.image.url }}" alt="Главное фото">
+    {% endif %}
 
-<div class="card">
-    <div class="card-body">
-        <h2>{{ employee.get_full_name }}</h2>
-        <p><strong>Должность:</strong> {{ employee.position|default:"Не указана" }}</p>
-        <p><strong>Отдел:</strong> {{ employee.department|default:"Не указан" }}</p>
-        
-        <h3>Навыки:</h3>
-        {% for skill in employee.employee_skills.all %}
-            <span class="badge bg-primary">{{ skill.skill.name }} ({{ skill.level }})</span>
+    <h2>Навыки</h2>
+    <ul>
+        {% for skill in skills %}
+            <li>{{ skill.name }} — уровень {{ skill.level }}</li>
         {% empty %}
-            <p>Навыки не указаны</p>
+            <li>Нет навыков.</li>
         {% endfor %}
-    </div>
-</div>
+    </ul>
 
-<a href="{% url 'employees:employee_list' %}" class="btn btn-secondary mt-3">Назад к списку</a>
-{% endblock %}
+    <h2>Галерея изображений</h2>
+    <ul>
+        {% for img in images %}
+            <li><img src="{{ img.image.url }}" alt="Фото {{ forloop.counter }}"></li>
+        {% empty %}
+            <li>Нет дополнительных изображений.</li>
+        {% endfor %}
+    </ul>
+
+    <a href="{% url 'employee_list' %}">Назад к списку сотрудников</a>
+</body>
+</html>

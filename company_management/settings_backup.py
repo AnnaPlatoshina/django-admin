@@ -23,3 +23,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 ROOT_URLCONF = 'company_management.urls'
+INSTALLED_APPS = [
+    # ...
+    'employees',
+    'workplaces',
+]

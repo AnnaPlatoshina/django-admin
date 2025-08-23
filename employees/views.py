@@ -1,55 +1,32 @@
-from django.shortcuts import render
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import ListView, DetailView
-from .models import CustomUser
+from django.shortcuts import render, get_object_or_404
+from .models import CustomUser, EmployeeImage, EmployeeSkill
+from datetime import date
 
 
-class HomeView(ListView):
-    """Главная страница"""
-    template_name = 'employees/home.html'
-    context_object_name = 'employees'
-
-    def get_queryset(self):
-        return CustomUser.objects.filter(is_active_employee=True)[:6]
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'Главная страница'
-        context['description'] = 'Система управления сотрудниками компании'
-        return context
+def employee_list(request):
+    employees = CustomUser.objects.all()
+    context = {
+        'employees': employees
+    }
+    return render(request, 'employees/employee_list.html', context)
 
 
-class EmployeeListView(ListView):
-    """Список всех сотрудников"""
-    model = CustomUser
-    template_name = 'employees/employee_list.html'
-    context_object_name = 'employees'
+def employee_detail(request, employee_id):
+    employee = get_object_or_404(CustomUser, pk=employee_id)
+    skills = EmployeeSkill.objects.filter(employee=employee)
+    images = EmployeeImage.objects.filter(employee=employee).order_by('order')
 
-    def get_queryset(self):
-        return CustomUser.objects.filter(is_active_employee=True)
+    # Стаж работы в днях
+    if employee.date_of_joining:
+        days_at_company = (date.today() - employee.date_of_joining).days
+    else:
+        days_at_company = None
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'Все сотрудники'
-        return context
-
-
-class EmployeeDetailView(LoginRequiredMixin, DetailView):
-    """Детальная карточка сотрудника"""
-    model = CustomUser
-    template_name = 'employees/employee_detail.html'
-    context_object_name = 'employee'
-    login_url = '/admin/login/'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = f'{self.object.get_full_name()} - Профиль'
-        return context
-
-
-def about_view(request):
-    """Страница о проекте"""
-    return render(request, 'employees/about.html', {
-        'title': 'О проекте',
-        'description': 'Информация о системе управления сотрудниками'
-    })
+    context = {
+        'employee': employee,
+        'skills': skills,
+        'images': images[1:] if images else [],  # все кроме первой
+        'main_image': images[0] if images else None,
+        'days_at_company': days_at_company,
+    }
+    return render(request, 'employees/employee_detail.html', context)
