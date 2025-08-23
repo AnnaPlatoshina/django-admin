@@ -1,5 +1,6 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+
 from .models import CustomUser
 
 
@@ -10,7 +11,7 @@ def set_employee_username(sender, instance, created, **kwargs):
     если username не задан
     """
     if created and not instance.username and instance.email:
-        base_username = instance.email.split('@')[0]
+        base_username = instance.email.split("@")[0]
         username = base_username
         counter = 1
 

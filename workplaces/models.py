@@ -1,25 +1,34 @@
 from django.db import models
-from employees.models import CustomUser
 from django.core.exceptions import ValidationError
 
-class Workplace(models.Model):
+# Валидатор соседних столов
+def no_adjacent_tables(employee):
+    if not employee.table:
+        return
+    adjacent_numbers = [employee.table.number - 1, employee.table.number + 1]
+    conflicting = Employee.objects.filter(table__number__in=adjacent_numbers)
+    if conflicting.exists():
+        raise ValidationError(
+            f"Стол {employee.table.number} соседствует с другим занятым столом."
+        )
+
+class Table(models.Model):
     number = models.PositiveIntegerField(unique=True)
-    employee = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return f"Table {self.number}"
+
+class Employee(models.Model):
+    name = models.CharField(max_length=100)
+    role = models.CharField(max_length=50, blank=True)
+    table = models.ForeignKey(Table, on_delete=models.SET_NULL, null=True, blank=True)
 
     def clean(self):
-        # Проверка соседних столов
-        if self.employee:
-            # Получаем всех соседей (номер стола ±1)
-            neighbors = Workplace.objects.filter(number__in=[self.number - 1, self.number + 1])
-            for neighbor in neighbors:
-                if neighbor.employee:
-                    if (self.employee.role == 'developer' and neighbor.employee.role == 'tester') or \
-                       (self.employee.role == 'tester' and neighbor.employee.role == 'developer'):
-                        raise ValidationError(f"Нельзя посадить {self.employee} рядом с {neighbor.employee}")
+        no_adjacent_tables(self)
 
     def save(self, *args, **kwargs):
-        self.clean()  # Проверяем перед сохранением
+        self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Стол {self.number} — {self.employee}"
+        return self.name

@@ -1,40 +1,52 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
+
+# Пользователь с ролями
 class CustomUser(AbstractUser):
-    middle_name = models.CharField(max_length=150, blank=True, null=True)
-    birth_date = models.DateField(blank=True, null=True)
-    phone = models.CharField(max_length=20, blank=True, null=True)
-    address = models.CharField(max_length=255, blank=True, null=True)
+    ROLE_CHOICES = (
+        ("developer", "Developer"),
+        ("tester", "Tester"),
+        ("manager", "Manager"),
+    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="developer")
 
     def __str__(self):
-        return f"{self.username} ({self.first_name} {self.last_name})"
+        return f"{self.username} ({self.role})"
 
 
+# Сотрудник
+class Employee(models.Model):
+    name = models.CharField(max_length=100, verbose_name="Имя")
+    position = models.CharField(max_length=100, verbose_name="Должность")
+    salary = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Зарплата")
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.position}"
+
+
+# Навыки сотрудника
 class Skill(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    description = models.TextField(blank=True, null=True)
+    name = models.CharField(max_length=50)
 
     def __str__(self):
         return self.name
 
 
 class EmployeeSkill(models.Model):
-    employee = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="skills")
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
     skill = models.ForeignKey(Skill, on_delete=models.CASCADE)
-    level = models.PositiveSmallIntegerField(default=1)  # уровень от 1 до 10
-
-    class Meta:
-        unique_together = ('employee', 'skill')
+    level = models.PositiveIntegerField(default=1)
 
     def __str__(self):
-        return f"{self.employee.username} - {self.skill.name} (Level {self.level})"
+        return f"{self.employee.name} - {self.skill.name} ({self.level})"
 
 
+# Изображения сотрудника
 class EmployeeImage(models.Model):
-    employee = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="images")
-    image = models.ImageField(upload_to='employee_images/')
-    description = models.CharField(max_length=255, blank=True, null=True)
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    image = models.ImageField(upload_to="employee_images/")
 
     def __str__(self):
-        return f"{self.employee.username} image"
+        return f"{self.employee.name} image"
