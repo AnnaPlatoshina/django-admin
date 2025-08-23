@@ -1,31 +1,25 @@
 from django.db import models
 from employees.models import CustomUser
+from django.core.exceptions import ValidationError
 
 class Workplace(models.Model):
-    """Модель рабочего места"""
-    desk_number = models.CharField(
-        max_length=20,
-        unique=True,
-        verbose_name='Номер стола'
-    )
-    employee = models.OneToOneField(
-        CustomUser,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name='Сотрудник',
-        related_name='workplace'
-    )
-    additional_info = models.TextField(
-        verbose_name='Дополнительная информация',
-        blank=True
-    )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создано')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Обновлено')
+    number = models.PositiveIntegerField(unique=True)
+    employee = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True)
 
-    class Meta:
-        verbose_name = 'Рабочее место'
-        verbose_name_plural = 'Рабочие места'
+    def clean(self):
+        # Проверка соседних столов
+        if self.employee:
+            # Получаем всех соседей (номер стола ±1)
+            neighbors = Workplace.objects.filter(number__in=[self.number - 1, self.number + 1])
+            for neighbor in neighbors:
+                if neighbor.employee:
+                    if (self.employee.role == 'developer' and neighbor.employee.role == 'tester') or \
+                       (self.employee.role == 'tester' and neighbor.employee.role == 'developer'):
+                        raise ValidationError(f"Нельзя посадить {self.employee} рядом с {neighbor.employee}")
+
+    def save(self, *args, **kwargs):
+        self.clean()  # Проверяем перед сохранением
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Стол №{self.desk_number}"
+        return f"Стол {self.number} — {self.employee}"

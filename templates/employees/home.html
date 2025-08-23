@@ -1,25 +1,69 @@
-echo '{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% block content %}
-<h1>Главная страница</h1>
-<p>Система управления сотрудниками</p>
-
 <div class="row">
+    <div class="col-12">
+        <h1>{{ title }}</h1>
+        <p class="lead">{{ description }}</p>
+
+        <!-- Общее количество сотрудников -->
+        <div class="alert alert-info">
+            <h4>📊 Статистика компании</h4>
+            <p>Всего сотрудников: <strong>{{ total_employees }}</strong></p>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <h2>🎯 Последние сотрудники</h2>
+        <p class="text-muted">Недавно принятые сотрудники компании</p>
+    </div>
+</div>
+
+<div class="row mt-3">
     {% for employee in employees %}
-    <div class="col-md-4 mb-3">
-        <div class="card">
+    <div class="col-md-3 mb-4">
+        <div class="card h-100">
+            <!-- Изображение сотрудника -->
+            {% if employee.primary_image %}
+            <img src="{{ employee.primary_image.image.url }}" class="card-img-top" alt="{{ employee.get_full_name }}" style="height: 200px; object-fit: cover;">
+            {% else %}
+            <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 200px;">
+                <span class="text-white">🖼️ Нет фото</span>
+            </div>
+            {% endif %}
+
             <div class="card-body">
                 <h5 class="card-title">{{ employee.get_full_name }}</h5>
-                <a href="{% url "employees:employee_detail" employee.pk %}" class="btn btn-primary">Подробнее</a>
+                <h6 class="card-subtitle mb-2 text-muted">{{ employee.position|default:"Должность не указана" }}</h6>
+
+                <!-- Стаж работы -->
+                <p class="card-text">
+                    <small class="text-muted">
+                        📅 Стаж: {{ employee.work_experience_days }} дней
+                    </small>
+                </p>
+
+                <!-- Навыки -->
+                <p class="card-text">
+                    {% for skill in employee.employee_skills.all|slice:":2" %}
+                    <span class="badge bg-primary">{{ skill.skill.name }} ({{ skill.level }})</span>
+                    {% endfor %}
+                </p>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'employees:employee_detail' employee.pk %}" class="btn btn-primary btn-sm w-100">Подробнее</a>
             </div>
         </div>
     </div>
     {% empty %}
     <div class="col-12">
         <div class="alert alert-info">
-            Сотрудников пока нет. Добавьте их через админку.
+            <h4>👥 Сотрудников пока нет</h4>
+            <p>Добавьте первых сотрудников через панель администратора.</p>
         </div>
     </div>
     {% endfor %}
 </div>
-{% endblock %}' > templates/employees/home.html
+{% endblock %}
