@@ -2,8 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.translation import gettext_lazy as _
-from django.db.models.signals import post_save
-from django.dispatch import receiver
+from django.core.files.storage import default_storage
 
 # Импортируем CKEditor 5 для WYSIWYG редактора
 try:
@@ -80,6 +79,51 @@ class EmployeeSkill(models.Model):
 
     def __str__(self):
         return f"{self.employee} - {self.skill} (уровень {self.level})"
+
+
+class EmployeeImage(models.Model):
+    """Модель для изображений сотрудника"""
+    employee = models.ForeignKey(
+        'CustomUser',
+        on_delete=models.CASCADE,
+        related_name='images',
+        verbose_name=_('Сотрудник')
+    )
+    image = models.ImageField(
+        upload_to='employee_images/%Y/%m/%d/',
+        verbose_name=_('Изображение')
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_('Порядковый номер'),
+        help_text=_('Чем меньше число, тем раньше отображается изображение')
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Дата создания'))
+
+    class Meta:
+        verbose_name = _('Изображение сотрудника')
+        verbose_name_plural = _('Изображения сотрудников')
+        ordering = ['order', 'created_at']
+
+    def __str__(self):
+        return f"Изображение {self.employee.get_full_name()} (#{self.order})"
+
+    def delete(self, *args, **kwargs):
+        """Удаляем файл изображения при удалении записи"""
+        if self.image:
+            if default_storage.exists(self.image.name):
+                default_storage.delete(self.image.name)
+        super().delete(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        """Автоматически устанавливаем порядок, если не указан"""
+        if self.order == 0:
+            # Находим максимальный порядок для этого сотрудника и добавляем 1
+            max_order = EmployeeImage.objects.filter(
+                employee=self.employee
+            ).aggregate(models.Max('order'))['order__max'] or 0
+            self.order = max_order + 1
+        super().save(*args, **kwargs)
 
 
 class CustomUser(AbstractUser):
@@ -194,22 +238,12 @@ class CustomUser(AbstractUser):
         except EmployeeSkill.DoesNotExist:
             return None
 
+    @property
+    def sorted_images(self):
+        """Возвращает изображения сотрудника в правильном порядке"""
+        return self.images.all().order_by('order')
 
-@receiver(post_save, sender=CustomUser)
-def set_employee_username(sender, instance, created, **kwargs):
-    """
-    Автоматически устанавливает username на основе email,
-    если username не задан
-    """
-    if created and not instance.username and instance.email:
-        base_username = instance.email.split('@')[0]
-        username = base_username
-        counter = 1
-
-        # Проверяем уникальность username
-        while CustomUser.objects.filter(username=username).exists():
-            username = f"{base_username}{counter}"
-            counter += 1
-
-        instance.username = username
-        instance.save()
+    @property
+    def primary_image(self):
+        """Возвращает первое изображение для превью"""
+        return self.images.first()

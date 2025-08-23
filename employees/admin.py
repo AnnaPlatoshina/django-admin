@@ -98,3 +98,36 @@ class EmployeeSkillAdmin(admin.ModelAdmin):
 
 # Регистрируем модели
 admin.site.register(CustomUser, CustomUserAdmin)
+
+from .models import EmployeeImage
+
+
+class EmployeeImageInline(admin.TabularInline):
+    """Inline для отображения изображений сотрудника"""
+    model = EmployeeImage
+    extra = 1
+    fields = ['image', 'order', 'created_at']
+    readonly_fields = ['created_at']
+
+
+class CustomUserAdmin(UserAdmin):
+    # ... существующие настройки ...
+    inlines = [EmployeeSkillInline, EmployeeImageInline]  # Добавляем ImageInline
+
+
+@admin.register(EmployeeImage)
+class EmployeeImageAdmin(admin.ModelAdmin):
+    """Админка для изображений сотрудников"""
+    list_display = ['employee', 'order', 'image_preview', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['employee__username', 'employee__first_name', 'employee__last_name']
+    list_editable = ['order']
+    readonly_fields = ['created_at', 'image_preview']
+
+    def image_preview(self, obj):
+        if obj.image:
+            return f'<img src="{obj.image.url}" style="max-height: 100px; max-width: 100px;" />'
+        return "Нет изображения"
+
+    image_preview.allow_tags = True
+    image_preview.short_description = _('Превью')

@@ -1,0 +1,25 @@
+echo '{% extends "base.html" %}
+
+{% block content %}
+<h1>Главная страница</h1>
+<p>Система управления сотрудниками</p>
+
+<div class="row">
+    {% for employee in employees %}
+    <div class="col-md-4 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{{ employee.get_full_name }}</h5>
+                <a href="{% url "employees:employee_detail" employee.pk %}" class="btn btn-primary">Подробнее</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            Сотрудников пока нет. Добавьте их через админку.
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}' > templates/employees/home.html
