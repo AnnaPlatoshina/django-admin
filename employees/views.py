@@ -1,27 +1,21 @@
-from rest_framework import viewsets, permissions, filters
-from rest_framework.pagination import PageNumberPagination
-from .models import Employee, Workplace
-from .serializers import EmployeeSerializer, EmployeeDetailSerializer, WorkplaceSerializer
+# employees/views.py
 
-class StandardResultsSetPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = 'page_size'
-    max_page_size = 100
+from rest_framework import viewsets
+from .models import Employee, Skill, EmployeeSkill, Workplace
+from .serializers import EmployeeSerializer, SkillSerializer, EmployeeSkillSerializer, WorkplaceSerializer
 
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    pagination_class = StandardResultsSetPagination
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['skills__name', 'experience']
 
-    def get_serializer_class(self):
-        if self.action == 'retrieve':
-            return EmployeeDetailSerializer
-        return EmployeeSerializer
+class SkillViewSet(viewsets.ModelViewSet):
+    queryset = Skill.objects.all()
+    serializer_class = SkillSerializer
+
+class EmployeeSkillViewSet(viewsets.ModelViewSet):
+    queryset = EmployeeSkill.objects.all()
+    serializer_class = EmployeeSkillSerializer
 
 class WorkplaceViewSet(viewsets.ModelViewSet):
     queryset = Workplace.objects.all()
     serializer_class = WorkplaceSerializer
-    permission_classes = [permissions.IsAuthenticated]
