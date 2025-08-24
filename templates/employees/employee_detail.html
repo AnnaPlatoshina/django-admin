@@ -1,22 +1,9 @@
-{% extends 'base.html' %}
+{{% extends "base.html" %}
 
 {% block content %}
-<h1>Профиль сотрудника</h1>
-
-<div class="card">
-    <div class="card-body">
-        <h2>{{ employee.get_full_name }}</h2>
-        <p><strong>Должность:</strong> {{ employee.position|default:"Не указана" }}</p>
-        <p><strong>Отдел:</strong> {{ employee.department|default:"Не указан" }}</p>
-        
-        <h3>Навыки:</h3>
-        {% for skill in employee.employee_skills.all %}
-            <span class="badge bg-primary">{{ skill.skill.name }} ({{ skill.level }})</span>
-        {% empty %}
-            <p>Навыки не указаны</p>
-        {% endfor %}
-    </div>
-</div>
-
-<a href="{% url 'employees:employee_list' %}" class="btn btn-secondary mt-3">Назад к списку</a>
+  <h1>Сотрудник: {{ employee.name }}</h1>
+  <p>Должность: {{ employee.position }}</p>
+  <p>Стол: {{ employee.table }}</p>
+  <a href="{% url 'employee_update' employee.pk %}">Редактировать</a> |
+  <a href="{% url 'employee_delete' employee.pk %}">Удалить</a>
 {% endblock %}

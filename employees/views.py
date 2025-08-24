@@ -1,55 +1,27 @@
-from django.shortcuts import render
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import ListView, DetailView
-from .models import CustomUser
+from rest_framework import viewsets, permissions, filters
+from rest_framework.pagination import PageNumberPagination
+from .models import Employee, Workplace
+from .serializers import EmployeeSerializer, EmployeeDetailSerializer, WorkplaceSerializer
 
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
-class HomeView(ListView):
-    """Главная страница"""
-    template_name = 'employees/home.html'
-    context_object_name = 'employees'
+class EmployeeViewSet(viewsets.ModelViewSet):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['skills__name', 'experience']
 
-    def get_queryset(self):
-        return CustomUser.objects.filter(is_active_employee=True)[:6]
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return EmployeeDetailSerializer
+        return EmployeeSerializer
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'Главная страница'
-        context['description'] = 'Система управления сотрудниками компании'
-        return context
-
-
-class EmployeeListView(ListView):
-    """Список всех сотрудников"""
-    model = CustomUser
-    template_name = 'employees/employee_list.html'
-    context_object_name = 'employees'
-
-    def get_queryset(self):
-        return CustomUser.objects.filter(is_active_employee=True)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = 'Все сотрудники'
-        return context
-
-
-class EmployeeDetailView(LoginRequiredMixin, DetailView):
-    """Детальная карточка сотрудника"""
-    model = CustomUser
-    template_name = 'employees/employee_detail.html'
-    context_object_name = 'employee'
-    login_url = '/admin/login/'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = f'{self.object.get_full_name()} - Профиль'
-        return context
-
-
-def about_view(request):
-    """Страница о проекте"""
-    return render(request, 'employees/about.html', {
-        'title': 'О проекте',
-        'description': 'Информация о системе управления сотрудниками'
-    })
+class WorkplaceViewSet(viewsets.ModelViewSet):
+    queryset = Workplace.objects.all()
+    serializer_class = WorkplaceSerializer
+    permission_classes = [permissions.IsAuthenticated]
