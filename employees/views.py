@@ -1,20 +1,27 @@
-from django.shortcuts import render, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from .models import Employee
+from rest_framework import viewsets, permissions, filters
+from rest_framework.pagination import PageNumberPagination
+from .models import Employee, Workplace
+from .serializers import EmployeeSerializer, EmployeeDetailSerializer, WorkplaceSerializer
 
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
-@login_required
-def employee_list(request):
-    employees = Employee.objects.all()
-    return render(request, "employees/employee_list.html", {"employees": employees})
+class EmployeeViewSet(viewsets.ModelViewSet):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['skills__name', 'experience']
 
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return EmployeeDetailSerializer
+        return EmployeeSerializer
 
-@login_required
-def employee_detail(request, pk):
-    employee = get_object_or_404(Employee, pk=pk)
-    return render(request, "employees/employee_detail.html", {"employee": employee})
-
-
-@login_required
-def home(request):
-    return render(request, "employees/home.html")
+class WorkplaceViewSet(viewsets.ModelViewSet):
+    queryset = Workplace.objects.all()
+    serializer_class = WorkplaceSerializer
+    permission_classes = [permissions.IsAuthenticated]

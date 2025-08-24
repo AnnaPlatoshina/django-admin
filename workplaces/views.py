@@ -1,44 +1,37 @@
-from django.db.models import Q
-from django.shortcuts import render
+from rest_framework import viewsets, permissions, filters
+from employees.models import Employee
+from .models import Table
+from .serializers import EmployeeSerializer, TableSerializer
 
-from .models import CustomUser, Skill
+# Разрешения по ролям
+class IsWatcherOrAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.role in ['watcher', 'admin']
 
+class IsAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.role == 'admin'
 
-def employee_list(request):
-    employees = CustomUser.objects.all()
+# CRUD для сотрудников
+class EmployeeViewSet(viewsets.ModelViewSet):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['skills', 'experience']
 
-    # --- фильтрация ---
-    department = request.GET.get("department")
-    skill = request.GET.get("skill")
-    min_experience = request.GET.get("min_experience")
-    sort_by = request.GET.get("sort", "last_name")
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [permissions.IsAuthenticated]
+        elif self.action in ['update', 'partial_update']:
+            permission_classes = [IsWatcherOrAdmin]
+        elif self.action in ['create', 'destroy']:
+            permission_classes = [IsAdmin]
+        else:
+            permission_classes = [permissions.IsAuthenticated]
+        return [perm() for perm in permission_classes]
 
-    if department:
-        employees = employees.filter(department__icontains=department)
-
-    if skill:
-        employees = employees.filter(
-            employee_skills__skill__name__icontains=skill
-        ).distinct()
-
-    if min_experience:
-        try:
-            min_exp = int(min_experience)
-            employees = [
-                e for e in employees if e.work_experience_days >= min_exp * 365
-            ]
-        except ValueError:
-            pass
-
-    # --- сортировка ---
-    if sort_by in ["last_name", "first_name", "hire_date"]:
-        employees = employees.order_by(sort_by)
-
-    context = {
-        "employees": employees,
-        "departments": CustomUser.objects.values_list(
-            "department", flat=True
-        ).distinct(),
-        "skills": Skill.objects.all(),
-    }
-    return render(request, "employee_list.html", context)
+# CRUD для столов
+class TableViewSet(viewsets.ModelViewSet):
+    queryset = Table.objects.all()
+    serializer_class = TableSerializer
+    permission_classes = [permissions.IsAuthenticated]

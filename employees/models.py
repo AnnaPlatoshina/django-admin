@@ -1,52 +1,48 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
-
-# Пользователь с ролями
+# Пользователь
 class CustomUser(AbstractUser):
-    ROLE_CHOICES = (
-        ("developer", "Developer"),
-        ("tester", "Tester"),
-        ("manager", "Manager"),
-    )
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="developer")
+    pass  # Можно добавить поля, если нужно
 
-    def __str__(self):
-        return f"{self.username} ({self.role})"
-
-
-# Сотрудник
-class Employee(models.Model):
-    name = models.CharField(max_length=100, verbose_name="Имя")
-    position = models.CharField(max_length=100, verbose_name="Должность")
-    salary = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Зарплата")
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, null=True, blank=True)
-
-    def __str__(self):
-        return f"{self.name} - {self.position}"
-
-
-# Навыки сотрудника
+# Навык
 class Skill(models.Model):
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=255)
 
     def __str__(self):
         return self.name
 
+# Сотрудник
+class Employee(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
+    experience = models.PositiveIntegerField(default=0)
 
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"
+
+# Навыки сотрудника
 class EmployeeSkill(models.Model):
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='skills')
     skill = models.ForeignKey(Skill, on_delete=models.CASCADE)
-    level = models.PositiveIntegerField(default=1)
 
     def __str__(self):
-        return f"{self.employee.name} - {self.skill.name} ({self.level})"
+        return f"{self.employee} - {self.skill}"
 
+# Место работы
+class Workplace(models.Model):
+    name = models.CharField(max_length=255)
+    address = models.TextField()
 
-# Изображения сотрудника
+    def __str__(self):
+        return self.name
+
+# Изображения сотрудников
 class EmployeeImage(models.Model):
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
-    image = models.ImageField(upload_to="employee_images/")
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='employee_images/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.employee.name} image"
+        return f"Image for {self.employee}"

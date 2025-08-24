@@ -98,3 +98,14 @@ python manage.py migrate
 Контакты
 Проект ведёт: Анна Платошина
 Email: example@example.com
+
+# Employees App
+
+В приложении `employees` реализованы следующие модели:
+
+- **CustomUser** — пользователь
+- **Employee** — сотрудник
+- **Skill** — навык
+- **EmployeeSkill** — связь сотрудника и навыка
+- **Workplace** — место работы
+- **EmployeeImage** — изображения сотрудников
