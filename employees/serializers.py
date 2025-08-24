@@ -1,30 +1,40 @@
-from rest_framework import serializers
-from .models import Employee, Skill, EmployeeSkill, Workplace
+# employees/serializers.py
 
+from rest_framework import serializers
+from .models import Employee, Skill, EmployeeSkill, Workplace, EmployeeImage, CustomUser
+
+# Сериализатор для сотрудников
+class EmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Employee
+        fields = '__all__'
+
+# Сериализатор для навыков
 class SkillSerializer(serializers.ModelSerializer):
     class Meta:
         model = Skill
-        fields = ['id', 'name']
+        fields = '__all__'
 
+# Сериализатор для связи сотрудников и навыков
 class EmployeeSkillSerializer(serializers.ModelSerializer):
-    skill = SkillSerializer(read_only=True)
-
     class Meta:
         model = EmployeeSkill
-        fields = ['skill', 'level']
+        fields = '__all__'
 
-class EmployeeSerializer(serializers.ModelSerializer):
-    skills = EmployeeSkillSerializer(source='employeeskill_set', many=True, read_only=True)
-
-    class Meta:
-        model = Employee
-        fields = ['id', 'first_name', 'last_name', 'experience', 'skills', 'photo']
-
-class EmployeeDetailSerializer(EmployeeSerializer):
-    # Можно добавить более подробные поля при необходимости
-    pass
-
+# Сериализатор для рабочих мест
 class WorkplaceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Workplace
-        fields = ['id', 'name', 'employee']
+        fields = '__all__'
+
+# Если у тебя есть кастомные пользователи
+class CustomUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = '__all__'
+
+# Для изображений сотрудников (если используешь ImageField)
+class EmployeeImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmployeeImage
+        fields = '__all__'

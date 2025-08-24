@@ -1,11 +1,10 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import EmployeeViewSet, TableViewSet
+from rest_framework import routers
+from .views import EmployeeViewSet, SkillViewSet, EmployeeSkillViewSet, WorkplaceViewSet
 
-router = DefaultRouter()
-router.register(r'employees', EmployeeViewSet)
-router.register(r'tables', TableViewSet)
+router = routers.DefaultRouter()
+router.register(r'employees', EmployeeViewSet, basename='employee')
+router.register(r'skills', SkillViewSet, basename='skill')
+router.register(r'employee-skills', EmployeeSkillViewSet, basename='employee_skill')
+router.register(r'workplaces', WorkplaceViewSet, basename='workplace')
 
-urlpatterns = [
-    path('', include(router.urls)),
-]
+urlpatterns = router.urls
